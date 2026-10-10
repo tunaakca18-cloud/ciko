@@ -1,4 +1,3 @@
-# ciko
 # Çiko Atölye
 
 ## Ücretsiz yayına alma (Cloudflare Pages)
