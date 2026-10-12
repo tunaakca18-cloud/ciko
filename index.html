@@ -331,17 +331,6 @@
     </form>
   </dialog>
 
-  <dialog class="admin-dialog" id="customerDialog" aria-labelledby="customerDialogTitle">
-    <form class="dialog-content" id="customerLoginForm">
-      <div class="dialog-top"><div><p class="eyebrow">Müşteri girişi</p><h2 id="customerDialogTitle">Mağazaya hoş geldin.</h2></div><button class="dialog-close" id="closeCustomerDialog" type="button" aria-label="Pencereyi kapat">Kapat</button></div>
-      <p class="dialog-description">Mağazaya devam etmek için misafir parolanı gir.</p>
-      <label class="password-label" for="customerPassword">Misafir parolası</label>
-      <div class="password-row"><input id="customerPassword" name="password" type="password" autocomplete="current-password" required></div>
-      <p class="password-error" id="customerPasswordError" role="alert"></p>
-      <button class="button dialog-submit" type="submit">Mağazaya gir</button>
-    </form>
-  </dialog>
-
   <dialog class="admin-dialog" id="addProductDialog" aria-labelledby="addProductTitle">
     <form class="dialog-content product-form" id="addProductForm">
       <div class="dialog-top"><div><p class="eyebrow">Katalog</p><h2 id="addProductTitle">Yeni ürün ekle</h2></div><button class="dialog-close" id="closeAddProductDialog" type="button" aria-label="Pencereyi kapat">Kapat</button></div>
@@ -395,7 +384,6 @@
     const store = document.querySelector("#store");
     const adminPanel = document.querySelector("#adminPanel");
     const adminDialog = document.querySelector("#adminDialog");
-    const customerDialog = document.querySelector("#customerDialog");
     const addProductDialog = document.querySelector("#addProductDialog");
     const cartDialog = document.querySelector("#cartDialog");
     const productLightbox = document.querySelector("#productLightbox");
@@ -447,17 +435,6 @@
       }
       products = catalogResult;
       renderCatalog();
-    }
-
-    async function enterStoreWithSession(endpoint, password) {
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password })
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || "Giriş başarısız.");
-      await loadCatalogForCurrentSession();
     }
 
     function renderFilters() {
@@ -589,30 +566,7 @@
       }
     }
 
-    document.querySelector("#customerEntry").addEventListener("click", () => {
-      document.querySelector("#customerPasswordError").textContent = "";
-      document.querySelector("#customerPassword").value = "";
-      customerDialog.showModal();
-      document.querySelector("#customerPassword").focus();
-    });
-    document.querySelector("#closeCustomerDialog").addEventListener("click", () => customerDialog.close());
-    document.querySelector("#customerLoginForm").addEventListener("submit", async event => {
-      event.preventDefault();
-      const form = event.currentTarget;
-      const submitButton = form.querySelector("[type=submit]");
-      const error = document.querySelector("#customerPasswordError");
-      submitButton.disabled = true;
-      error.textContent = "";
-      try {
-        await enterStoreWithSession("/api/guest/login", document.querySelector("#customerPassword").value);
-        customerDialog.close();
-        showStore();
-      } catch (loginError) {
-        error.textContent = loginError.message || "Güvenli giriş sunucusuna ulaşılamadı.";
-      } finally {
-        submitButton.disabled = false;
-      }
-    });
+    document.querySelector("#customerEntry").addEventListener("click", showStore);
     document.querySelector("#adminEntry").addEventListener("click", () => {
       document.querySelector("#passwordError").textContent = "";
       document.querySelector("#adminPassword").value = "";
