@@ -331,10 +331,21 @@
     </form>
   </dialog>
 
+  <dialog class="admin-dialog" id="customerDialog" aria-labelledby="customerDialogTitle">
+    <form class="dialog-content" id="customerLoginForm">
+      <div class="dialog-top"><div><p class="eyebrow">Müşteri girişi</p><h2 id="customerDialogTitle">Mağazaya hoş geldin.</h2></div><button class="dialog-close" id="closeCustomerDialog" type="button" aria-label="Pencereyi kapat">Kapat</button></div>
+      <p class="dialog-description">Mağazaya devam etmek için misafir parolanı gir.</p>
+      <label class="password-label" for="customerPassword">Misafir parolası</label>
+      <div class="password-row"><input id="customerPassword" name="password" type="password" autocomplete="current-password" required></div>
+      <p class="password-error" id="customerPasswordError" role="alert"></p>
+      <button class="button dialog-submit" type="submit">Mağazaya gir</button>
+    </form>
+  </dialog>
+
   <dialog class="admin-dialog" id="addProductDialog" aria-labelledby="addProductTitle">
     <form class="dialog-content product-form" id="addProductForm">
       <div class="dialog-top"><div><p class="eyebrow">Katalog</p><h2 id="addProductTitle">Yeni ürün ekle</h2></div><button class="dialog-close" id="closeAddProductDialog" type="button" aria-label="Pencereyi kapat">Kapat</button></div>
-      <p class="dialog-description">Ürün bilgilerini doldur; eklenen ürün bu tarayıcıda saklanır.</p>
+      <p class="dialog-description">Ürün bilgilerini doldur; ürün sunucu kataloğuna kaydedilir.</p>
       <label for="newProductImage">Görsel</label>
       <input id="newProductImage" name="image" type="file" accept="image/*" required>
       <label for="newProductName">Ad</label>
@@ -378,17 +389,13 @@
   </dialog>
 
   <script>
-    const defaultProducts = [
-      { id: 7, name: "Çiko Klasik Patates Cipsi", category: "Atıştırmalık", detail: "Klasik lezzet · Tuz içerir · 150 g", price: 67, stock: "Sonsuz", image: "./images/ciko-klasik-cipsi-150g.jpg", tag: "Çiko Klasik", nutrition: [["Enerji", "540 kcal"], ["Yağ", "34 g"], ["Doymuş yağ", "4 g", true], ["Karbonhidrat", "52 g"], ["Şekerler", "1.5 g", true], ["Lif", "4.5 g"], ["Protein", "6 g"], ["Tuz", "1.8 g"]], ingredients: "Patates (%65), bitkisel yağlar (ayçiçek yağı, kanola yağı veya palm yağı), deniz tuzu, sitrik asit (tazeliğini korumak için)." },
-      { id: 8, name: "Çiko Karpuz & Limonlu Meyve Aromalı Gazsız İçecek", category: "İçecek", detail: "Doğal meyve aromalı · 330 ml", price: 31, stock: "Sonsuz", image: "./images/ciko-karpuz-limon-icecek.jpg", tag: "Yeni", nutrition: [["Enerji", "~30 kcal"], ["Yağ", "0 g"], ["Karbonhidrat", "~7.5 g"], ["Şekerler", "~7.5 g"], ["Protein", "<0.5 g"]], ingredients: "Su; şeker veya fruktoz-glikoz şurubu; çay ekstratı / demlenmiş çay (siyah veya yeşil çay); meyve suyu konsantreleri (karpuz suyu ve limon suyu); doğal karpuz ve limon aromaları; asitlik düzenleyiciler (sitrik asit, sodyum sitrat); antioksidan (askorbik asit - C vitamini)." },
-      { id: 9, name: "Çiko Klasik + Bol Soslu Patates Cipsi", category: "Atıştırmalık", detail: "Klasik + bol soslu lezzet · 165 g", price: 67, stock: "Sonsuz", image: "./images/ciko-yeni-urun.jpg", tag: "Yeni", nutrition: [["Enerji", "540 kcal"], ["Yağ", "31 g"], ["Doymuş Yağ", "4 g"], ["Karbonhidrat", "53 g"], ["Şekerler", "1.6 g"], ["Lif", "4.5 g"], ["Protein", "6 g"], ["Tuz", "1.6 g"]], ingredients: "Patates püresi / kurutulmuş patates; bitkisel yağlar (ayçiçek, kanola veya palm yağı); soslu çeşni / aroma vericiler (soslu lezzet katmanı için); buğday nişastası ve unu; tuz ve baharatlar." }
-    ];
-    let products = [...defaultProducts];
+    let products = [];
     const formatter = new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 0 });
     const entrance = document.querySelector("#entrance");
     const store = document.querySelector("#store");
     const adminPanel = document.querySelector("#adminPanel");
     const adminDialog = document.querySelector("#adminDialog");
+    const customerDialog = document.querySelector("#customerDialog");
     const addProductDialog = document.querySelector("#addProductDialog");
     const cartDialog = document.querySelector("#cartDialog");
     const productLightbox = document.querySelector("#productLightbox");
@@ -430,6 +437,27 @@
       store.hidden = true;
       adminPanel.hidden = false;
       window.scrollTo(0, 0);
+    }
+
+    async function loadCatalogForCurrentSession() {
+      const catalogResponse = await fetch("/api/products", { cache: "no-store" });
+      const catalogResult = await catalogResponse.json();
+      if (!catalogResponse.ok || !Array.isArray(catalogResult)) {
+        throw new Error(catalogResult.error || "Ürün kataloğu yüklenemedi.");
+      }
+      products = catalogResult;
+      renderCatalog();
+    }
+
+    async function enterStoreWithSession(endpoint, password) {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password })
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Giriş başarısız.");
+      await loadCatalogForCurrentSession();
     }
 
     function renderFilters() {
@@ -557,12 +585,33 @@
         products = catalog;
         renderCatalog();
       } catch {
-        // Keep the bundled catalog available while the host API is not configured.
+        return;
       }
     }
 
     document.querySelector("#customerEntry").addEventListener("click", () => {
-      showStore();
+      document.querySelector("#customerPasswordError").textContent = "";
+      document.querySelector("#customerPassword").value = "";
+      customerDialog.showModal();
+      document.querySelector("#customerPassword").focus();
+    });
+    document.querySelector("#closeCustomerDialog").addEventListener("click", () => customerDialog.close());
+    document.querySelector("#customerLoginForm").addEventListener("submit", async event => {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const submitButton = form.querySelector("[type=submit]");
+      const error = document.querySelector("#customerPasswordError");
+      submitButton.disabled = true;
+      error.textContent = "";
+      try {
+        await enterStoreWithSession("/api/guest/login", document.querySelector("#customerPassword").value);
+        customerDialog.close();
+        showStore();
+      } catch (loginError) {
+        error.textContent = loginError.message || "Güvenli giriş sunucusuna ulaşılamadı.";
+      } finally {
+        submitButton.disabled = false;
+      }
     });
     document.querySelector("#adminEntry").addEventListener("click", () => {
       document.querySelector("#passwordError").textContent = "";
@@ -595,6 +644,7 @@
           error.textContent = result.error || "Yönetici girişi başarısız.";
           return;
         }
+        await loadCatalogForCurrentSession();
         adminDialog.close();
         showAdmin();
       } catch {
