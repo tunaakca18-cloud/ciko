@@ -8,7 +8,6 @@
 
 3. GitHub deposunda **Settings → Secrets and variables → Actions** altında şu repository secrets’ları oluştur:
 	- `ADMIN_PASSWORD`: yalnız yönetici parolası.
-	- `GUEST_PASSWORD`: misafir parolası.
 	- `SESSION_SECRET`: en az 32 rastgele baytlık imza anahtarı. Terminalde `openssl rand -base64 32` ile üret; bu değeri sohbete veya dosyaya koyma.
 	- `CLOUDFLARE_API_TOKEN`: yalnız ilgili Pages projesini ve secret’larını yönetme yetkisi olan Cloudflare API token’ı.
 	- `CLOUDFLARE_ACCOUNT_ID`: Cloudflare hesap kimliği.
@@ -17,7 +16,7 @@
 5. `.github/workflows/sync-cloudflare-secrets.yml` workflow’u GitHub Actions üzerinden bu GitHub secrets’ları Cloudflare Pages Functions runtime secrets’larına aktarır. Pages projesi oluşturulduktan sonra workflow’u **Actions → Sync Cloudflare Pages secrets → Run workflow** ile çalıştır. Yeni secret değerini daha sonra değiştirince de workflow’u tekrar çalıştır.
 6. `main` dalına push edilen kod Cloudflare Pages’te otomatik yayınlanır. Workflow tamamlandıktan ve ilk dağıtım bittikten sonra mağaza, bilgisayar kapalıyken de Cloudflare adresinden erişilebilir.
 
-Misafir ve yönetici parolaları ayrı Cloudflare secrets olarak sunucuda doğrulanır. Misafir kataloğu görebilir; ürün ekleme ve silme yalnız yönetici oturumuyla yapılır. Ürün kataloğu Cloudflare KV'de saklanır. Bu demo gerçek ödeme almaz.
+Mağaza misafir parolası olmadan herkese açıktır. Yönetici parolası Cloudflare secret olarak sunucuda doğrulanır. Herkes kataloğu görebilir; ürün ekleme ve silme yalnız yönetici oturumuyla yapılır. Ürün kataloğu Cloudflare KV'de saklanır. Bu demo gerçek ödeme almaz.
 
 GitHub Pages tek başına Pages Functions çalıştırmaz; burada GitHub yalnız kaynak kodu ve deployment secrets’larını sağlar, çalışan site Cloudflare Pages’te barındırılır. Parolaları HTML, JavaScript, `wrangler.toml` veya GitHub commit’lerine ekleme. Sohbette paylaşılmış parolaları yayına almadan önce yenile.
 
