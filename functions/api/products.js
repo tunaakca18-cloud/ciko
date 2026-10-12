@@ -1,14 +1,13 @@
 import { defaultProducts } from "../_shared/default-products.js";
-import { hasSameOrigin, isAdminRequest, isStoreRequest, jsonResponse } from "../_shared/auth.js";
+import { hasSameOrigin, isAdminRequest, jsonResponse } from "../_shared/auth.js";
 
 async function readProducts(env) {
   const storedProducts = await env.PRODUCTS.get("catalog", "json");
   return Array.isArray(storedProducts) ? storedProducts : defaultProducts;
 }
 
-export async function onRequestGet({ request, env }) {
+export async function onRequestGet({ env }) {
   if (!env.PRODUCTS) return jsonResponse({ error: "Ürün kataloğu henüz yapılandırılmadı." }, 503);
-  if (!(await isStoreRequest(request, env))) return jsonResponse({ error: "Mağazaya girmek için misafir veya yönetici girişi gerekli." }, 401);
   return jsonResponse(await readProducts(env));
 }
 
