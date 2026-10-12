@@ -47,8 +47,8 @@ async function getSessionRole(request, env) {
     const valid = await crypto.subtle.verify("HMAC", await getSigningKey(env.SESSION_SECRET), decodeBase64Url(signature), encoder.encode(payload));
     if (!valid) return false;
     const session = JSON.parse(new TextDecoder().decode(decodeBase64Url(payload)));
-    return Number.isFinite(session.exp) && session.exp > Date.now() && (session.role === "admin" || session.role === "guest")
-      ? session.role
+    return Number.isFinite(session.exp) && session.exp > Date.now() && session.role === "admin"
+      ? "admin"
       : null;
   } catch {
     return null;
@@ -57,10 +57,6 @@ async function getSessionRole(request, env) {
 
 export async function isAdminRequest(request, env) {
   return (await getSessionRole(request, env)) === "admin";
-}
-
-export async function isStoreRequest(request, env) {
-  return Boolean(await getSessionRole(request, env));
 }
 
 export function hasSameOrigin(request) {
