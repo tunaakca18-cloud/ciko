@@ -52,3 +52,4 @@ export async function onRequestPost({ request, env }) {
     return jsonResponse({ error: "Güvenli giriş servisi geçici olarak kullanılamıyor." }, 503);
   }
 }
+
